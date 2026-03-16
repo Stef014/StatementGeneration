@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransactionCaptureService", "TransactionCaptureService\TransactionCaptureService.csproj", "{FFCB1EDF-6A61-B081-F926-377025C28E78}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FFCB1EDF-6A61-B081-F926-377025C28E78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFCB1EDF-6A61-B081-F926-377025C28E78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFCB1EDF-6A61-B081-F926-377025C28E78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFCB1EDF-6A61-B081-F926-377025C28E78}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8A4B4FB0-9589-4C38-A2A9-33EC46832F74}
+	EndGlobalSection
+EndGlobal
