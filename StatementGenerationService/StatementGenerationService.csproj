@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-StatementGenerationService-8b47f141-2522-44e6-879c-c0a8eb427e70</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.15.2" />
+    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.3.25" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
+</Project>

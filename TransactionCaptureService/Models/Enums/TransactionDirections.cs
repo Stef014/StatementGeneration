@@ -2,6 +2,6 @@ namespace TransactionCaptureService.Models.Enums;
 
 public enum TransactionDirections
 {
-    In,
-    Out
+    Out = 0,
+    In = 1,
 }

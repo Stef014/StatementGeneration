@@ -2,7 +2,7 @@ namespace TransactionCaptureService.Models.Enums;
 
 public enum TransactionCategories
 {
-    Groceries,
+    Groceries = 1,
     DigitalPayments,
     Fuel,
     Loans,

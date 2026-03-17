@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Akka.Streams" Version="1.5.62" />
+    <PackageReference Include="AwsSdk" Version="2.3.55.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.5" />
   </ItemGroup>
 
