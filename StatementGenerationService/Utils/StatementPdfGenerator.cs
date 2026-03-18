@@ -30,8 +30,8 @@ public class StatementPdfGenerator : IDocument
                 table.ColumnsDefinition(columns =>
                 {
                     columns.RelativeColumn(20);
-                    columns.RelativeColumn(30);
-                    columns.RelativeColumn(30);
+                    columns.RelativeColumn(40);
+                    columns.RelativeColumn(20);
                     columns.RelativeColumn(10);
                     columns.RelativeColumn(10);
                 });
@@ -47,7 +47,7 @@ public class StatementPdfGenerator : IDocument
 
                 foreach (var transaction in _transactions)
                 {
-                    table.Cell().Text(transaction.TransactionTimestamp.ToString());
+                    table.Cell().Text(DateTimeOffset.FromUnixTimeMilliseconds(transaction.TransactionTimestamp).ToString("yyyy-MM-dd"));
                     table.Cell().Text(transaction.Description);
                     table.Cell().Text(transaction.Category.ToString());
                     if (transaction.Direction == 1) // Money In
