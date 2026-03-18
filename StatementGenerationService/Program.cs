@@ -33,6 +33,8 @@ builder.Services.AddSingleton<IAmazonS3>(sp => new AmazonS3Client(credentials, s
 builder.Services.AddScoped<ITransactionsRepository, TransactionsRepository>();
 builder.Services.AddScoped<IFileStorageRepository, FileStorageRepository>();
 builder.Services.AddScoped<IFileManagementService, FileManagementService>();
+builder.Services.AddScoped<IStatementRepository, StatementRepository>();
+builder.Services.AddScoped<IStatementsService, StatementsService>();
 builder.Services.AddScoped<IReportGenerator, StatementGenerator>();
 
 var host = builder.Build();

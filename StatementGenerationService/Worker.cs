@@ -40,6 +40,9 @@ public class Worker : BackgroundService
                     var fileManagementService = scope.ServiceProvider.GetRequiredService<IFileManagementService>();
                     var uploadedStatementUrl = await fileManagementService.UploadFileAsync(fileName, stoppingToken);
                     _logger.LogInformation("Statement uploaded to storage: {uploadedStatementUrl}", uploadedStatementUrl);
+
+                    var statementsService = scope.ServiceProvider.GetRequiredService<IStatementsService>();
+                    await statementsService.GenerateStatementAsync(request, uploadedStatementUrl, stoppingToken);
                 }
 
                 _logger.LogInformation("Statement generation completed at: {time}", DateTimeOffset.Now);    
