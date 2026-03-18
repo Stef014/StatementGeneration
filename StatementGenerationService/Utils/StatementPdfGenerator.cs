@@ -1,8 +1,11 @@
 
+using System.ComponentModel;
+using System.Reflection;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using StatementGenerationService.Models;
+using StatementGenerationService.Models.Enums;
 
 namespace StatementGenerationService.Utils;
 
@@ -19,6 +22,13 @@ public class StatementPdfGenerator : IDocument
         _transactions = transactions;
     }
 
+    private static string GetEnumDescription(Enum value)
+    {
+        var field = value.GetType().GetField(value.ToString());
+        var attribute = field?.GetCustomAttribute<DescriptionAttribute>();
+        return attribute?.Description ?? value.ToString();
+    }
+
     public void Compose(IDocumentContainer container)
     {
         container.Page(page =>
@@ -29,11 +39,11 @@ public class StatementPdfGenerator : IDocument
             {
                 table.ColumnsDefinition(columns =>
                 {
-                    columns.RelativeColumn(20);
-                    columns.RelativeColumn(40);
-                    columns.RelativeColumn(20);
-                    columns.RelativeColumn(10);
-                    columns.RelativeColumn(10);
+                    columns.RelativeColumn(15);
+                    columns.RelativeColumn(30);
+                    columns.RelativeColumn(25);
+                    columns.RelativeColumn(15);
+                    columns.RelativeColumn(15);
                 });
 
                 table.Header(header =>
@@ -49,16 +59,16 @@ public class StatementPdfGenerator : IDocument
                 {
                     table.Cell().Text(DateTimeOffset.FromUnixTimeMilliseconds(transaction.TransactionTimestamp).ToString("yyyy-MM-dd"));
                     table.Cell().Text(transaction.Description);
-                    table.Cell().Text(transaction.Category.ToString());
+                    table.Cell().Text(GetEnumDescription((TransactionCategories)transaction.Category));
                     if (transaction.Direction == 1) // Money In
                     {
-                        table.Cell().Text(transaction.Amount.ToString());
+                        table.Cell().Text($"R{transaction.Amount / 100m:F2}");
                         table.Cell().Text("");
                     }
                     else // Money Out
                     {
                         table.Cell().Text("");
-                        table.Cell().Text(transaction.Amount.ToString());
+                        table.Cell().Text($"R{transaction.Amount / 100m:F2}");
                     }
                 }
             });
