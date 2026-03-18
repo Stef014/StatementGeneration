@@ -16,6 +16,15 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // TODO: This will arrive from a queue
+        var request = new Models.StatementGenerationRequest
+        {
+            AccountId = Guid.Parse("9d209565-ce8f-4a0d-bb73-e8fec2bbcd08"),
+            AccountHolderName = "John Doe",
+            StartTimestamp = DateTimeOffset.Now.AddDays(-90).ToUnixTimeMilliseconds(),
+            EndTimestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds()
+        };
+
         while (!stoppingToken.IsCancellationRequested)
         {
             _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
@@ -25,19 +34,19 @@ public class Worker : BackgroundService
                 using (var scope = _scopeFactory.CreateScope())
                 {
                     var reportGenerator = scope.ServiceProvider.GetRequiredService<IReportGenerator>();
-                    var fileName = await reportGenerator.GenerateReportAsync(Guid.Parse("9d209565-ce8f-4a0d-bb73-e8fec2bbcd08"), DateTimeOffset.Now.AddDays(-90).ToUnixTimeMilliseconds(), DateTimeOffset.Now.ToUnixTimeMilliseconds(), stoppingToken);
-                    _logger.LogInformation("Report generated: {fileName}", fileName);
+                    var fileName = await reportGenerator.GenerateReportAsync(request.AccountId, request.AccountHolderName, request.StartTimestamp, request.EndTimestamp, stoppingToken);
+                    _logger.LogInformation("Statement generated: {fileName}", fileName);
 
                     var fileManagementService = scope.ServiceProvider.GetRequiredService<IFileManagementService>();
                     var uploadedStatementUrl = await fileManagementService.UploadFileAsync(fileName, stoppingToken);
-                    _logger.LogInformation("Report uploaded to storage: {uploadedStatementUrl}", uploadedStatementUrl);
+                    _logger.LogInformation("Statement uploaded to storage: {uploadedStatementUrl}", uploadedStatementUrl);
                 }
 
-                _logger.LogInformation("Report generation completed at: {time}", DateTimeOffset.Now);    
+                _logger.LogInformation("Statement generation completed at: {time}", DateTimeOffset.Now);    
             } 
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while generating the report.");
+                _logger.LogError(ex, "An error occurred while generating the statement.");
                 continue;
             }
             
