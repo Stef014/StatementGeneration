@@ -11,5 +11,6 @@
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.15.2" />
     <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.3.25" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageReference Include="QuestPDF" Version="2026.2.3" />
   </ItemGroup>
 </Project>

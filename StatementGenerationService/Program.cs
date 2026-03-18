@@ -1,9 +1,13 @@
 using Amazon.DynamoDBv2;
+using QuestPDF.Infrastructure;
+
 using StatementGenerationService;
 using StatementGenerationService.Services;
 using StatementGenerationService.Services.Interfaces;
 using StatementGenerationService.Repositories;
 using StatementGenerationService.Repositories.Interfaces;
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddHostedService<Worker>();

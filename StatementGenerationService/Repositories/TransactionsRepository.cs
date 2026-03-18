@@ -18,10 +18,12 @@ public class TransactionsRepository : ITransactionsRepository
 
     public async Task<IEnumerable<Transaction>> GetTransactionsByAccountIdAsync(Guid accountId, long startTimestamp, long endTimestamp, CancellationToken cancellationToken)
     {
+        Console.WriteLine($"Querying transactions for AccountId: {accountId}, StartTimestamp: {startTimestamp}, EndTimestamp: {endTimestamp}");
+
         var request = new QueryRequest
         {
             TableName = TableName,
-            KeyConditionExpression = "AccountId = :accountId AND TransactionTimestamp BETWEEN :startTimestamp AND :endTimestamp",
+            KeyConditionExpression = "AccountID = :accountId AND TransactionTimestamp BETWEEN :startTimestamp AND :endTimestamp",
             ExpressionAttributeValues = new Dictionary<string, AttributeValue>
             {
                 { ":accountId", new AttributeValue { S = accountId.ToString() } },
@@ -31,14 +33,16 @@ public class TransactionsRepository : ITransactionsRepository
         };
 
         var response = await _dynamoDbClient.QueryAsync(request, cancellationToken);
+        
+        Console.WriteLine($"Query executed. Items retrieved: {response.Items.Count}");
+
         return response.Items.Select(item => new Transaction
         {
-            TransactionId = Guid.Parse(item["TransactionId"].S),
             TransactionTimestamp = long.Parse(item["TransactionTimestamp"].N),
-            AccountId = Guid.Parse(item["AccountId"].S),
+            AccountId = Guid.Parse(item["AccountID"].S),
             Description = item["Description"].S,
             Category = int.Parse(item["Category"].N),
-            Direction = int.Parse(item["TransactionDirection"].N),
+            Direction = int.Parse(item["Direction"].N),
             Amount = long.Parse(item["Amount"].N),
         });
     }

@@ -11,7 +11,7 @@ public class Transaction
     public Guid AccountId { get; set; }
     
     [DynamoDBRangeKey]
-    public long TransactionTimestamp { get; set; }        
+    public long TransactionTimestamp { get; set; }         
     
     [DynamoDBProperty]
     public string Description { get; set; }

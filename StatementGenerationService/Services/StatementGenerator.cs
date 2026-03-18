@@ -1,6 +1,8 @@
+using QuestPDF.Fluent;
 using StatementGenerationService.Models.Enums;
 using StatementGenerationService.Repositories.Interfaces;
 using StatementGenerationService.Services.Interfaces;
+using StatementGenerationService.Utils;
 
 namespace StatementGenerationService.Services;
 
@@ -17,5 +19,11 @@ public class StatementGenerator : IReportGenerator
     public async Task GenerateReportAsync(Guid accountId, long startTimestamp, long endTimestamp, CancellationToken cancellationToken)
     {
         var transactionsForInvoice = await _transactionsRepository.GetTransactionsByAccountIdAsync(accountId, startTimestamp, endTimestamp, cancellationToken);
+        
+        Console.WriteLine("nTransactions retrieved: " + transactionsForInvoice.Count());
+        
+        var accountHolderName = "Eugene Nyawo"; // Replace with actual logic to get account holder name
+        var pdfGenerator = new StatementPdfGenerator(accountId, accountHolderName, transactionsForInvoice);
+        pdfGenerator.GeneratePdf($"./Statements/{accountId}_{DateTime.Now:yyyyMMdd}_Statement.pdf");
     }
 }
