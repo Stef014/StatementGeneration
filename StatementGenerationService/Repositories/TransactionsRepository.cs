@@ -18,8 +18,6 @@ public class TransactionsRepository : ITransactionsRepository
 
     public async Task<IEnumerable<Transaction>> GetTransactionsByAccountIdAsync(Guid accountId, long startTimestamp, long endTimestamp, CancellationToken cancellationToken)
     {
-        Console.WriteLine($"Querying transactions for AccountId: {accountId}, StartTimestamp: {startTimestamp}, EndTimestamp: {endTimestamp}");
-
         var request = new QueryRequest
         {
             TableName = TableName,
@@ -33,8 +31,6 @@ public class TransactionsRepository : ITransactionsRepository
         };
 
         var response = await _dynamoDbClient.QueryAsync(request, cancellationToken);
-        
-        Console.WriteLine($"Query executed. Items retrieved: {response.Items.Count}");
 
         return response.Items.Select(item => new Transaction
         {
