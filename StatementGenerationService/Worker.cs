@@ -23,7 +23,7 @@ public class Worker : BackgroundService
             AccountId = Guid.Parse("9d209565-ce8f-4a0d-bb73-e8fec2bbcd08"),
             AccountHolderName = "John Doe",
             AccountHolderEmailAddress = "john.doe@example.com",
-            StartTimestamp = DateTimeOffset.Now.AddDays(-90).ToUnixTimeMilliseconds(),
+            StartTimestamp = DateTimeOffset.Now.AddDays(-30).ToUnixTimeMilliseconds(),
             EndTimestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds()
         };
 
