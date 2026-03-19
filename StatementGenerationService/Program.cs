@@ -23,7 +23,7 @@ var credentials = new Amazon.Runtime.BasicAWSCredentials(builder.Configuration["
 
 var s3Config = new AmazonS3Config
 {
-    ServiceURL = builder.Configuration["S3ServiceUrl"],
+    ServiceURL = builder.Configuration["AwsServiceUrl"],
     ForcePathStyle = true
 };
 
