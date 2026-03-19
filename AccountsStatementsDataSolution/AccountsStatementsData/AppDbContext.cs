@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
             entity.HasKey(a => a.AccountId);
             entity.Property(a => a.AccountId).ValueGeneratedOnAdd();
             entity.Property(a => a.AccountHolderName).IsRequired().HasMaxLength(255);
+            entity.Property(a => a.AccountHolderEmailAddress).IsRequired().HasMaxLength(255);
             entity.Property(a => a.ClosingBalance).IsRequired();
         });
         
