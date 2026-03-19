@@ -1,6 +1,13 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using StatementGenerationService.Services.Interfaces;
+using Microsoft.Extensions.Hosting;
 using StatementGenerationService.Utils;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using StatementGenerationService.Jobs.Interfaces;
+using StatementGenerationService.Models;
 
 namespace StatementGenerationService;
 
@@ -8,11 +15,13 @@ public class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IQueueConsumerService<StatementGenerationRequest> _queueConsumerService;
 
-    public Worker(ILogger<Worker> logger, IServiceScopeFactory scopeFactory)
+    public Worker(ILogger<Worker> logger, IQueueConsumerService<StatementGenerationRequest> queueConsumerService, IServiceScopeFactory scopeFactory)
     {
         _logger = logger;
         _scopeFactory = scopeFactory;
+        _queueConsumerService = queueConsumerService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -33,15 +42,19 @@ public class Worker : BackgroundService
 
             try
             {
+                var accountInput = await _queueConsumerService.DequeueAsync(stoppingToken);
+
+                if (accountInput is null)
+                {
+                    _logger.LogInformation("Waiting for account entries...");
+                    await Task.Delay(10000, stoppingToken);
+                    continue;
+                }
+
                 using (var scope = _scopeFactory.CreateScope())
                 {
-                    var fileName = await GenerateStatement(scope.ServiceProvider, request, stoppingToken);
-
-                    var uploadedStatementUrl = await UploadStatementToStorage(scope.ServiceProvider, fileName, stoppingToken);
-
-                    await SaveAccountStatement(scope.ServiceProvider, request, uploadedStatementUrl, stoppingToken);
-
-                    await SendStatementMail(scope.ServiceProvider, request, uploadedStatementUrl);
+                    var statementJob = scope.ServiceProvider.GetRequiredService<IJob<StatementGenerationRequest>>();
+                    await statementJob.ExecuteAsync(accountInput, stoppingToken);
                 }
 
                 _logger.LogInformation("Statement generation completed at: {time}", DateTimeOffset.Now);    
@@ -55,34 +68,5 @@ public class Worker : BackgroundService
 
             await Task.Delay(1000, stoppingToken);
         }
-    }
-
-    private static async Task SaveAccountStatement(IServiceProvider serviceProvider, Models.StatementGenerationRequest request, string uploadedStatementUrl, CancellationToken cancellationToken)
-    {
-        var statementsService = serviceProvider.GetRequiredService<IStatementsService>();
-        await statementsService.GenerateStatementAsync(request, uploadedStatementUrl, cancellationToken);
-    }
-
-    private async Task<string> GenerateStatement(IServiceProvider serviceProvider, Models.StatementGenerationRequest request, CancellationToken cancellationToken)
-    {
-        var reportGenerator = serviceProvider.GetRequiredService<IReportGenerator>();
-        var fileName = await reportGenerator.GenerateReportAsync(request.AccountId, request.AccountHolderName, request.StartTimestamp, request.EndTimestamp, cancellationToken);
-        _logger.LogInformation("Statement generated: {fileName}", fileName);
-        return fileName;
-    }
-
-    private async Task<string> UploadStatementToStorage(IServiceProvider serviceProvider, string fileName, CancellationToken cancellationToken)
-    {
-        var fileManagementService = serviceProvider.GetRequiredService<IFileManagementService>();
-        var uploadedStatementUrl = await fileManagementService.UploadFileAsync(fileName, cancellationToken);
-        _logger.LogInformation("Statement uploaded to storage: {uploadedStatementUrl}", uploadedStatementUrl);
-        return uploadedStatementUrl;
-    }
-
-    private static async Task SendStatementMail(IServiceProvider serviceProvider, Models.StatementGenerationRequest request, string uploadedStatementUrl)
-    {
-        var mailingService = serviceProvider.GetRequiredService<IMailingService>();
-        var emailBody = StatementLinkMailGenerator.GenerateStatementEmailBody(request.AccountHolderName, uploadedStatementUrl);
-        await mailingService.SendEmailAsync(request.AccountHolderEmailAddress, $"Monthly Statement for Account: {request.AccountId}", emailBody);
     }
 }
