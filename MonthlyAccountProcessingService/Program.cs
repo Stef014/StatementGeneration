@@ -1,10 +1,39 @@
+using AccountsStatementsData;
+using AccountsStatementsData.Entities;
 using Hangfire;
 using Hangfire.PostgreSql;
+using Microsoft.EntityFrameworkCore;
 using MonthlyAccountProcessingService.Configuration;
 using MonthlyAccountProcessingService.HostedServices;
 using MonthlyAccountProcessingService.Jobs;
+using MonthlyAccountProcessingService.Services;
+using MonthlyAccountProcessingService.Services.Interfaces;
+using StackExchange.Redis;
 
 var builder = Host.CreateApplicationBuilder(args);
+
+var accountsStatementsConnection = builder.Configuration.GetConnectionString("AccountsStatementsConnection")
+	?? throw new InvalidOperationException("AccountsStatementsConnection is missing.");
+
+builder.Services
+	.AddOptions<RedisQueueSettings>()
+	.Bind(builder.Configuration.GetSection(RedisQueueSettings.SectionName))
+	.Validate(settings => !string.IsNullOrWhiteSpace(settings.ConnectionString), "Redis connection string is required.")
+	.Validate(settings => !string.IsNullOrWhiteSpace(settings.AccountQueueKey), "Redis queue key is required.")
+	.ValidateOnStart();
+
+var redisSettings = builder.Configuration
+	.GetSection(RedisQueueSettings.SectionName)
+	.Get<RedisQueueSettings>()
+	?? throw new InvalidOperationException("Redis settings are missing.");
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp => 
+    ConnectionMultiplexer.Connect(redisSettings.ConnectionString));
+
+builder.Services.AddScoped<IQueueService<Account>, RedisQueueService<Account>>();
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+	options.UseNpgsql(accountsStatementsConnection));
 
 builder.Services
 	.AddOptions<HangfireSettings>()
