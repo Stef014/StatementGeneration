@@ -26,16 +26,6 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // TODO: This will arrive from a queue
-        var request = new Models.StatementGenerationRequest
-        {
-            AccountId = Guid.Parse("9d209565-ce8f-4a0d-bb73-e8fec2bbcd08"),
-            AccountHolderName = "John Doe",
-            AccountHolderEmailAddress = "john.doe@example.com",
-            StartTimestamp = DateTimeOffset.Now.AddDays(-30).ToUnixTimeMilliseconds(),
-            EndTimestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds()
-        };
-
         while (!stoppingToken.IsCancellationRequested)
         {
             _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);

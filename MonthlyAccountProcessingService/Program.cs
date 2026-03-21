@@ -1,9 +1,9 @@
 using AccountsStatementsData;
-using AccountsStatementsData.Entities;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.EntityFrameworkCore;
 using MonthlyAccountProcessingService.Configuration;
+using MonthlyAccountProcessingService.Dtos;
 using MonthlyAccountProcessingService.HostedServices;
 using MonthlyAccountProcessingService.Jobs;
 using MonthlyAccountProcessingService.Services;
@@ -30,7 +30,7 @@ var redisSettings = builder.Configuration
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp => 
     ConnectionMultiplexer.Connect(redisSettings.ConnectionString));
 
-builder.Services.AddScoped<IQueueService<Account>, RedisQueueService<Account>>();
+builder.Services.AddScoped<IQueueService<StatementGenerationRequestDto>, RedisQueueService<StatementGenerationRequestDto>>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 	options.UseNpgsql(accountsStatementsConnection));

@@ -41,8 +41,10 @@ public class StatementGenerationJob : IJob<StatementGenerationRequest>
         var uploadedStatementUrl = await UploadStatementToStorage(input, fileName, cancellationToken);
 
         await SaveAccountStatement(input, uploadedStatementUrl, cancellationToken);
+        _logger.LogInformation("Statement record saved for AccountId: {AccountId}", input.AccountId);
 
         await SendStatementMail(input, uploadedStatementUrl);
+        _logger.LogInformation("Statement email sent to account: {AccountId}", input.AccountHolderEmailAddress);
     }
 
     private async Task<string> GenerateStatement(StatementGenerationRequest request, CancellationToken cancellationToken)
