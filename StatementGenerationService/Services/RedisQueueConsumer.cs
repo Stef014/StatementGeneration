@@ -26,6 +26,11 @@ public class RedisQueueConsumer<T> : IQueueConsumerService<T>
 
         var item = await db.ListLeftPopAsync(_queueKey);
         
+        if (item.IsNullOrEmpty)
+        {
+            return default;
+        }
+
         _logger.LogInformation("Dequeued item: {Item}", item.ToString());
         return JsonSerializer.Deserialize<T>(item!);
         

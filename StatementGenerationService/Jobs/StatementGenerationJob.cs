@@ -1,7 +1,11 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Amazon.DynamoDBv2;
+using Amazon.S3;
+using Amazon.SimpleEmail;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 using StatementGenerationService.Jobs.Interfaces;
 using StatementGenerationService.Models;
 using StatementGenerationService.Services.Interfaces;
@@ -36,15 +40,47 @@ public class StatementGenerationJob : IJob<StatementGenerationRequest>
 
     public async Task ExecuteAsync(StatementGenerationRequest input, CancellationToken cancellationToken)
     {
-        var fileName = await GenerateStatement(input, cancellationToken);
+        try
+        {
+            var fileName = await GenerateStatement(input, cancellationToken);
 
-        var uploadedStatementUrl = await UploadStatementToStorage(input, fileName, cancellationToken);
+            var uploadedStatementUrl = await UploadStatementToStorage(input, fileName, cancellationToken);
 
-        await SaveAccountStatement(input, uploadedStatementUrl, cancellationToken);
-        _logger.LogInformation("Statement record saved for AccountId: {AccountId}", input.AccountId);
+            await SaveAccountStatement(input, uploadedStatementUrl, cancellationToken);
+            _logger.LogInformation("Statement record saved for AccountId: {AccountId}", input.AccountId);
 
-        await SendStatementMail(input, uploadedStatementUrl);
-        _logger.LogInformation("Statement email sent to account: {AccountId}", input.AccountHolderEmailAddress);
+            await SendStatementMail(input, uploadedStatementUrl);
+            _logger.LogInformation("Statement email sent to account: {AccountId}", input.AccountHolderEmailAddress);
+        }
+        catch(AmazonDynamoDBException dbEx)
+        {
+            _logger.LogError(dbEx, "DynamoDB error while connecting to the database during generation of statement for AccountId: {AccountId}", input.AccountId);
+            throw;
+        }
+
+        catch (NpgsqlException npgsqlEx)
+        {
+            _logger.LogError(npgsqlEx, "PostgreSQL error while connecting to the database during generation of statement for AccountId: {AccountId}", input.AccountId);
+            throw;
+        }
+
+        catch (AmazonSimpleEmailServiceException sesEx)
+        {
+            _logger.LogError(sesEx, "SES error while sending email for AccountId: {AccountId}", input.AccountId);
+            throw;
+        }
+
+        catch (AmazonS3Exception s3Ex)
+        {
+            _logger.LogError(s3Ex, "S3 error while uploading statement for AccountId: {AccountId}", input.AccountId);
+            throw;
+        }
+
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while processing statement generation for AccountId: {AccountId}", input.AccountId);
+            throw;
+        }
     }
 
     private async Task<string> GenerateStatement(StatementGenerationRequest request, CancellationToken cancellationToken)
