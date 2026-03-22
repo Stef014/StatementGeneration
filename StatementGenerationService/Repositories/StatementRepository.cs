@@ -19,7 +19,7 @@ public class StatementRepository : IStatementRepository
     {
         statement.StatementId = Guid.NewGuid();
 
-        var insertQuery = "INSERT INTO \"Statement\" (\"StatementId\", \"AccountId\", \"StartTimestamp\", \"EndTimestamp\", \"DownloadUrl\") VALUES (@StatementId, @AccountId, @StartTimestamp, @EndTimestamp, @DownloadUrl)";
+        var insertQuery = "INSERT INTO \"Statements\" (\"StatementId\", \"AccountId\", \"StartTimestamp\", \"EndTimestamp\", \"DownloadUrl\") VALUES (@StatementId, @AccountId, @StartTimestamp, @EndTimestamp, @DownloadUrl)";
         using var connection = new NpgsqlConnection(_connectionString);
         await connection.ExecuteAsync(insertQuery, statement);
     }
