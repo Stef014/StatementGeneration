@@ -1,6 +1,7 @@
 using AccountsStatementsData;
 using Hangfire;
 using Hangfire.PostgreSql;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using MonthlyAccountProcessingService.Configuration;
 using MonthlyAccountProcessingService.Dtos;
@@ -11,6 +12,7 @@ using MonthlyAccountProcessingService.Services.Interfaces;
 using StackExchange.Redis;
 
 var builder = Host.CreateApplicationBuilder(args);
+builder.Services.AddDataProtection();
 
 var accountsStatementsConnection = builder.Configuration.GetConnectionString("AccountsStatementsConnection")
 	?? throw new InvalidOperationException("AccountsStatementsConnection is missing.");

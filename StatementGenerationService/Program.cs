@@ -2,6 +2,7 @@ using Amazon.DynamoDBv2;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.SimpleEmail;
+using Microsoft.AspNetCore.DataProtection;
 using QuestPDF.Infrastructure;
 using StackExchange.Redis;
 
@@ -19,6 +20,7 @@ QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddHostedService<Worker>();
+builder.Services.AddDataProtection();
 
 var dynamoDbConfig = new AmazonDynamoDBConfig
 {
