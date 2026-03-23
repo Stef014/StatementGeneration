@@ -240,6 +240,18 @@ Console.WriteLine(Convert.ToBase64String(key));
                                                          └─────────────────────────┘
 ```
 
+## Testing
+
+1. In order to test the system, it is reccommended to scaffold the AccountsStatementsDataSolution first and load account data.
+
+2. Thereafter transactions need to be populated in the transactions database in DynamoDb.
+
+3. Run the MonthlyAccountProcessingService and StatementGenerationService simultaneously, ensuring Redis and an instance of AWS localstack is running.
+
+4. Account details should be pulled from both the Accounts- and Transactions databases and PDF's will be generated and saved to S3 with download links mailed to clients.
+
+TAKE NOTE: In the event that Localstack is used, links aren't actually mailed but can be seen in the sent box of SES. In the case where real AWS SES was used, this would work differently. Also take note that the e-mail address used to send the statements should be verified with the SES instance.
+
 ---
 
 ## Contact Us
