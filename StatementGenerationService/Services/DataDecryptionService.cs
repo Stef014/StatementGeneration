@@ -1,5 +1,7 @@
 using System;
-using Microsoft.AspNetCore.DataProtection;
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using StatementGenerationService.Services.Interfaces;
 
@@ -7,12 +9,14 @@ namespace StatementGenerationService.Services;
 
 public class DataDecryptionService : IDataDecryptionService
 {
-    private readonly IDataProtector _dataProtector;
+    private readonly byte[] _key;
     private readonly ILogger<DataDecryptionService> _logger;
 
-    public DataDecryptionService(IDataProtectionProvider dataProtectionProvider, ILogger<DataDecryptionService> logger)
+    public DataDecryptionService(IConfiguration configuration, ILogger<DataDecryptionService> logger)
     {
-        _dataProtector = dataProtectionProvider.CreateProtector("StatementGenerationService.DataDecryption");
+        var keyString = configuration["Encryption:Key"] 
+            ?? throw new InvalidOperationException("Encryption:Key is missing from configuration.");
+        _key = Convert.FromBase64String(keyString);
         _logger = logger;
     }
 
@@ -23,8 +27,24 @@ public class DataDecryptionService : IDataDecryptionService
             return cipherText;
         }
 
-        try {
-            return _dataProtector.Unprotect(cipherText);
+        try 
+        {
+            var fullCipher = Convert.FromBase64String(cipherText);
+            
+            using var aes = Aes.Create();
+            aes.Key = _key;
+            
+            // Extract IV from the beginning
+            var iv = new byte[aes.BlockSize / 8];
+            var encryptedBytes = new byte[fullCipher.Length - iv.Length];
+            Buffer.BlockCopy(fullCipher, 0, iv, 0, iv.Length);
+            Buffer.BlockCopy(fullCipher, iv.Length, encryptedBytes, 0, encryptedBytes.Length);
+            
+            aes.IV = iv;
+            var decryptor = aes.CreateDecryptor();
+            var decryptedBytes = decryptor.TransformFinalBlock(encryptedBytes, 0, encryptedBytes.Length);
+            
+            return Encoding.UTF8.GetString(decryptedBytes);
         }
         catch (Exception ex)
         {

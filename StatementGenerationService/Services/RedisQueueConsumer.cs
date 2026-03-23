@@ -30,8 +30,13 @@ public class RedisQueueConsumer<T> : IQueueConsumerService<T>
         {
             return default;
         }
-
         _logger.LogInformation("Dequeued item: {Item}", item.ToString());
+        
+        if (typeof(T) == typeof(string))
+        {
+            return (T)(object)item.ToString();
+        }
+        
         return JsonSerializer.Deserialize<T>(item!);
         
     }

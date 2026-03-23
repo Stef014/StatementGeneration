@@ -2,7 +2,6 @@ using Amazon.DynamoDBv2;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.SimpleEmail;
-using Microsoft.AspNetCore.DataProtection;
 using QuestPDF.Infrastructure;
 using StackExchange.Redis;
 
@@ -16,11 +15,11 @@ using StatementGenerationService.Services.Interfaces;
 using StatementGenerationService.Repositories;
 using StatementGenerationService.Repositories.Interfaces;
 
+
 QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddHostedService<Worker>();
-builder.Services.AddDataProtection();
 
 var dynamoDbConfig = new AmazonDynamoDBConfig
 {
@@ -55,8 +54,11 @@ builder.Services.AddSingleton<IAmazonDynamoDB>(sp => new AmazonDynamoDBClient(cr
 builder.Services.AddSingleton<IAmazonSimpleEmailService>(sp => new AmazonSimpleEmailServiceClient(credentials, mailConfig));
 builder.Services.AddSingleton<IAmazonS3>(sp => new AmazonS3Client(credentials, s3Config));
 builder.Services.AddSingleton(redisSettings);
-builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisSettings.ConnectionString));
-builder.Services.AddSingleton<IQueueConsumerService<StatementGenerationRequest>, RedisQueueConsumer<StatementGenerationRequest>>();
+var redis = ConnectionMultiplexer.Connect(redisSettings.ConnectionString);
+builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
+
+builder.Services.AddSingleton<IQueueConsumerService<string>, RedisQueueConsumer<string>>();
+builder.Services.AddSingleton<IDataDecryptionService, DataDecryptionService>();
 
 builder.Services.AddScoped<ITransactionsRepository, TransactionsRepository>();
 builder.Services.AddScoped<IFileStorageRepository, FileStorageRepository>();
@@ -68,4 +70,5 @@ builder.Services.AddScoped<IMailingService, MailingService>();
 builder.Services.AddScoped<IJob<StatementGenerationRequest>, StatementGenerationJob>();
 
 var host = builder.Build();
+
 host.Run();

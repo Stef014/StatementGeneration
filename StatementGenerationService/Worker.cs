@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using StatementGenerationService.Jobs.Interfaces;
 using StatementGenerationService.Models;
+using System.Text.Json;
 
 namespace StatementGenerationService;
 
@@ -15,12 +16,14 @@ public class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IQueueConsumerService<StatementGenerationRequest> _queueConsumerService;
+    private readonly IQueueConsumerService<string> _queueConsumerService;
+    private readonly IDataDecryptionService _dataDecryptionService;
 
-    public Worker(ILogger<Worker> logger, IQueueConsumerService<StatementGenerationRequest> queueConsumerService, IServiceScopeFactory scopeFactory)
+    public Worker(ILogger<Worker> logger, IQueueConsumerService<string> queueConsumerService, IServiceScopeFactory scopeFactory, IDataDecryptionService dataDecryptionService)
     {
         _logger = logger;
         _scopeFactory = scopeFactory;
+        _dataDecryptionService = dataDecryptionService;
         _queueConsumerService = queueConsumerService;
     }
 
@@ -41,10 +44,13 @@ public class Worker : BackgroundService
                     continue;
                 }
 
+                var decryptedInput = _dataDecryptionService.Decrypt(accountInput);
+                var statementRequest = JsonSerializer.Deserialize<StatementGenerationRequest>(decryptedInput);
+
                 using (var scope = _scopeFactory.CreateScope())
                 {
                     var statementJob = scope.ServiceProvider.GetRequiredService<IJob<StatementGenerationRequest>>();
-                    await statementJob.ExecuteAsync(accountInput, stoppingToken);
+                    await statementJob.ExecuteAsync(statementRequest, stoppingToken);
                 }
 
                 _logger.LogInformation("Statement generation completed at: {time}", DateTimeOffset.Now);    

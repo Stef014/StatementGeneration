@@ -1,7 +1,6 @@
 using AccountsStatementsData;
 using Hangfire;
 using Hangfire.PostgreSql;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using MonthlyAccountProcessingService.Configuration;
 using MonthlyAccountProcessingService.Dtos;
@@ -12,7 +11,6 @@ using MonthlyAccountProcessingService.Services.Interfaces;
 using StackExchange.Redis;
 
 var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddDataProtection();
 
 var accountsStatementsConnection = builder.Configuration.GetConnectionString("AccountsStatementsConnection")
 	?? throw new InvalidOperationException("AccountsStatementsConnection is missing.");
@@ -29,14 +27,15 @@ var redisSettings = builder.Configuration
 	.Get<RedisQueueSettings>()
 	?? throw new InvalidOperationException("Redis settings are missing.");
 
-builder.Services.AddSingleton<IConnectionMultiplexer>(sp => 
-    ConnectionMultiplexer.Connect(redisSettings.ConnectionString));
+var redis = ConnectionMultiplexer.Connect(redisSettings.ConnectionString);
+builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
 
-builder.Services.AddScoped<IQueueService<StatementGenerationRequestDto>, RedisQueueService<StatementGenerationRequestDto>>();
+builder.Services.AddSingleton<IQueueService<string>, RedisQueueService<string>>();
+builder.Services.AddSingleton<IDataEncryptionService, DataEncryptionService>();
+
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 	options.UseNpgsql(accountsStatementsConnection));
-
 builder.Services
 	.AddOptions<HangfireSettings>()
 	.Bind(builder.Configuration.GetSection(HangfireSettings.SectionName))

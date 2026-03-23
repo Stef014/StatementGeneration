@@ -22,7 +22,9 @@ public class RedisQueueService<T> : IQueueService<T>
     public async Task SendBatchAsync(IEnumerable<T> items, CancellationToken cancellationToken)
     {
         var values = items
-            .Select(item => (RedisValue)JsonSerializer.Serialize(item))
+            .Select(item => typeof(T) == typeof(string) 
+                ? (RedisValue)item!.ToString()! 
+                : (RedisValue)JsonSerializer.Serialize(item))
             .ToArray();
 
         await _db.ListRightPushAsync(_queueKey, values);

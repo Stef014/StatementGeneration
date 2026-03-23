@@ -1,6 +1,7 @@
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Text.Json;
 
 using AccountsStatementsData;
 using Microsoft.EntityFrameworkCore;
@@ -14,13 +15,15 @@ public sealed class MonthlyAccountProcessingJob
     private readonly ILogger<MonthlyAccountProcessingJob> _logger;
 
     private readonly AppDbContext _appDbContext;
-    private readonly IQueueService<StatementGenerationRequestDto> _queueService;
+    private readonly IQueueService<string> _queueService;
+    private readonly IDataEncryptionService _dataEncryptionService;
 
-    public MonthlyAccountProcessingJob(AppDbContext appDbContext, ILogger<MonthlyAccountProcessingJob> logger, IQueueService<StatementGenerationRequestDto> queueService)
+    public MonthlyAccountProcessingJob(AppDbContext appDbContext, ILogger<MonthlyAccountProcessingJob> logger, IQueueService<string> queueService, IDataEncryptionService dataEncryptionService)
     {
         _appDbContext = appDbContext;
         _logger = logger;
         _queueService = queueService;
+        _dataEncryptionService = dataEncryptionService;
     }
 
     public async Task RunAsync(CancellationToken cancellationToken)
@@ -31,7 +34,7 @@ public sealed class MonthlyAccountProcessingJob
 
         var (startTimestamp, endTimestamp) = GetPreviousMonthPeriod(DateTimeOffset.UtcNow);
 
-        var channel = Channel.CreateBounded<StatementGenerationRequestDto>(new BoundedChannelOptions(10000)
+        var channel = Channel.CreateBounded<string>(new BoundedChannelOptions(10000)
         {
             FullMode = BoundedChannelFullMode.Wait,
             SingleReader = true,
@@ -52,7 +55,9 @@ public sealed class MonthlyAccountProcessingJob
                         EndTimestamp = endTimestamp
                     };
 
-                    await channel.Writer.WriteAsync(requestDto, cancellationToken);
+                    var encryptedRequest = _dataEncryptionService.Encrypt(JsonSerializer.Serialize(requestDto));
+
+                    await channel.Writer.WriteAsync(encryptedRequest, cancellationToken);
                 }
             }
             finally
@@ -63,13 +68,13 @@ public sealed class MonthlyAccountProcessingJob
 
         var consumer = Task.Run(async () => {
             const int batchSize = 10;
-            var batch = new List<StatementGenerationRequestDto>(batchSize);
+            var batch = new List<string>(batchSize);
 
             while (await channel.Reader.WaitToReadAsync(cancellationToken)) 
             {
-                while (batch.Count < batchSize && channel.Reader.TryRead(out var requestDto))
+                while (batch.Count < batchSize && channel.Reader.TryRead(out var encryptedRequest))
                 {
-                    batch.Add(requestDto);
+                    batch.Add(encryptedRequest);
                 }
 
                 if (batch.Count > 0)
