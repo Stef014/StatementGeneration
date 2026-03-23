@@ -13,12 +13,14 @@ public class StatementPdfGenerator : IDocument
 {
     private readonly Guid _accountId;
     private readonly string _accountHolderName;
+    private readonly long _accountBalance;
     private readonly IEnumerable<Transaction> _transactions;    
     
-    public StatementPdfGenerator(Guid accountId, string accountHolderName, IEnumerable<Transaction> transactions)
+    public StatementPdfGenerator(Guid accountId, string accountHolderName, long accountBalance, IEnumerable<Transaction> transactions)
     {
         _accountId = accountId;
         _accountHolderName = accountHolderName;
+        _accountBalance = accountBalance;
         _transactions = transactions;
     }
 
@@ -35,44 +37,55 @@ public class StatementPdfGenerator : IDocument
         {
             page.Margin(50);
             page.Header().Text($"Statement for Account: {_accountId} -  Holder: {_accountHolderName}");
-            page.Content().Table(table =>
+            page.Content().Column(column =>
             {
-                table.ColumnsDefinition(columns =>
+                column.Item().Table(table =>
                 {
-                    columns.RelativeColumn(15);
-                    columns.RelativeColumn(30);
-                    columns.RelativeColumn(25);
-                    columns.RelativeColumn(15);
-                    columns.RelativeColumn(15);
-                });
-
-                table.Header(header =>
-                {
-                    header.Cell().Text("Date");
-                    header.Cell().Text("Description");
-                    header.Cell().Text("Category");
-                    header.Cell().Text("Money In");
-                    header.Cell().Text("Money Out");
-                });
-
-                foreach (var transaction in _transactions)
-                {
-                    table.Cell().Text(DateTimeOffset.FromUnixTimeMilliseconds(transaction.TransactionTimestamp).ToString("yyyy-MM-dd"));
-                    table.Cell().Text(transaction.Description);
-                    table.Cell().Text(GetEnumDescription((TransactionCategories)transaction.Category));
-                    if (transaction.Direction == 1) // Money In
+                    table.ColumnsDefinition(columns =>
                     {
-                        table.Cell().Text($"R{transaction.Amount / 100m:F2}");
-                        table.Cell().Text("");
-                    }
-                    else // Money Out
+                        columns.RelativeColumn(15);
+                        columns.RelativeColumn(30);
+                        columns.RelativeColumn(25);
+                        columns.RelativeColumn(15);
+                        columns.RelativeColumn(15);
+                    });
+
+                    table.Header(header =>
                     {
-                        table.Cell().Text("");
-                        table.Cell().Text($"R{transaction.Amount / 100m:F2}");
+                        header.Cell().Text("Date");
+                        header.Cell().Text("Description");
+                        header.Cell().Text("Category");
+                        header.Cell().Text("Money In");
+                        header.Cell().Text("Money Out");
+                    });
+
+                    foreach (var transaction in _transactions)
+                    {
+                        table.Cell().Text(DateTimeOffset.FromUnixTimeMilliseconds(transaction.TransactionTimestamp).ToString("yyyy-MM-dd"));
+                        table.Cell().Text(transaction.Description);
+                        table.Cell().Text(GetEnumDescription((TransactionCategories)transaction.Category));
+                        if (transaction.Direction == 1) // Money In
+                        {
+                            table.Cell().Text($"R{transaction.Amount / 100m:F2}");
+                            table.Cell().Text("");
+                        }
+                        else // Money Out
+                        {
+                            table.Cell().Text("");
+                            table.Cell().Text($"R{transaction.Amount / 100m:F2}");
+                        }
                     }
-                }
+                });
+                
+                column.Item()
+                    .PaddingTop(10)
+                    .AlignRight()
+                    .Text($"Balance: R{_accountBalance / 100m:F2}")
+                    .FontSize(14)
+                    .Bold();
             });
         });
+
     }
 
 }

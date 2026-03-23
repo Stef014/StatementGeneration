@@ -50,6 +50,7 @@ public sealed class MonthlyAccountProcessingJob
                     {
                         AccountId = account.AccountId,
                         AccountHolderName = account.AccountHolderName,
+                        AccountBalance = account.ClosingBalance,
                         AccountHolderEmailAddress = account.AccountHolderEmailAddress,
                         StartTimestamp = startTimestamp,
                         EndTimestamp = endTimestamp

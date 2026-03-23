@@ -17,13 +17,13 @@ public class StatementGenerator : IReportGenerator
 
     }
  
-    public async Task<string> GenerateReportAsync(Guid accountId, string accountHolderName, long startTimestamp, long endTimestamp, CancellationToken cancellationToken)
+    public async Task<string> GenerateReportAsync(Guid accountId, string accountHolderName, long accountBalance, long startTimestamp, long endTimestamp, CancellationToken cancellationToken)
     {
         var fileName = $"./Statements/{accountId}_{DateTime.Now:yyyyMMdd}_Statement.pdf";
         
         var transactionsForInvoice = await _transactionsRepository.GetTransactionsByAccountIdAsync(accountId, startTimestamp, endTimestamp, cancellationToken);
         
-        var pdfGenerator = new StatementPdfGenerator(accountId, accountHolderName, transactionsForInvoice);
+        var pdfGenerator = new StatementPdfGenerator(accountId, accountHolderName, accountBalance, transactionsForInvoice);
         pdfGenerator.GeneratePdf(fileName);
 
         return fileName;

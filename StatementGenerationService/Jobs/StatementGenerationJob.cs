@@ -85,7 +85,7 @@ public class StatementGenerationJob : IJob<StatementGenerationRequest>
 
     private async Task<string> GenerateStatement(StatementGenerationRequest request, CancellationToken cancellationToken)
     {
-        var fileName = await _reportGenerator.GenerateReportAsync(request.AccountId, request.AccountHolderName, request.StartTimestamp, request.EndTimestamp, cancellationToken);
+        var fileName = await _reportGenerator.GenerateReportAsync(request.AccountId, request.AccountHolderName, request.AccountBalance, request.StartTimestamp, request.EndTimestamp, cancellationToken);
         _logger.LogInformation("Statement generated: {fileName}", fileName);
         return fileName;
     }
