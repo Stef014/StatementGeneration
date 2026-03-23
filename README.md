@@ -10,11 +10,11 @@ A shared data access layer built with Entity Framework Core 8.0 that provides OR
 
 ### MonthlyAccountProcessingService
 
-A background job orchestrator that triggers monthly statement generation for all accounts. Running as a hosted service with Hangfire for job scheduling, it queries all accounts from the PostgreSQL database, calculates the previous month's date range, and creates encrypted statement generation requests for each account. These requests are batched and pushed to a Redis queue using a producer-consumer pattern with bounded channels for efficient memory management and backpressure handling.
+A background job orchestrator that triggers monthly statement generation for all accounts. Running as a hosted service with Hangfire for job scheduling, it queries all accounts from the PostgreSQL database, calculates the previous month's date range and creates encrypted statement generation requests for each account. These requests are batched and pushed to a Redis queue using a producer-consumer pattern with bounded channels for efficient memory management and backpressure handling.
 
 ### StatementGenerationService
 
-A background worker service that processes statement generation requests from the Redis queue. For each request, it fetches the account's transactions from DynamoDB, generates a PDF statement using QuestPDF with transaction details and balance, uploads the PDF to AWS S3, persists statement metadata to PostgreSQL, and sends an email with a pre-signed download link to the account holder via AWS SES.
+A background worker service that processes statement generation requests from the Redis queue. For each request, it fetches the account's transactions from DynamoDB, generates a PDF statement using QuestPDF with transaction details and balance, uploads the PDF to AWS S3, persists statement metadata to PostgreSQL and sends an email with a pre-signed download link to the account holder via AWS SES. This service assumes that transaction data has already been pushed via a queue to DynamoDb.
 
 ---
 
