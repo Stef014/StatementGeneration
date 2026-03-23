@@ -1,0 +1,105 @@
+version: "3.8"
+
+services:
+  # Infrastructure
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3,ses,dynamodb
+      - DEBUG=1
+      - PERSISTENCE=1
+      - SES_SKIP_SIGNATURE_VALIDATION=1
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./init-localstack.sh:/etc/localstack/init/ready.d/init-localstack.sh
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Application
+  monthly-account-processing-service:
+    build:
+      context: .
+      dockerfile: MonthlyAccountProcessingService/Dockerfile
+    container_name: monthly-account-processing-service
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+      - ConnectionStrings__AccountsStatementsConnection=Host=postgres;Port=5432;Database=accounts_statements;Username=postgres;Password=postgres
+      - Hangfire__ConnectionString=Host=postgres;Port=5432;Database=hangfire;Username=postgres;Password=postgres
+      - Hangfire__RecurringJobId=monthly-statement-proccessing
+      - Hangfire__CronExpression=30 3 1 * *
+      - Hangfire__TimeZoneId=Africa/Johannesburg
+      - Redis__ConnectionString=redis:6379
+      - Redis__AccountQueueKey=monthly-statement-proccessing
+      - Encryption__Key=YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  statement-generation-service:
+    build:
+      context: ./StatementGenerationService
+      dockerfile: Dockerfile
+    container_name: statement-generation-service
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+      - DynamoDbServer=http://localstack:4566/
+      - AwsServiceUrl=http://localstack:4566/
+      - AwsRegion=us-east-1
+      - S3BucketName=capitec-statement-bucket
+      - AwsAccessKey=test
+      - AwsSecretKey=test
+      - Redis__ConnectionString=redis:6379
+      - Redis__AccountQueueKey=monthly-statement-proccessing
+      - ConnectionStrings__AccountsStatementsConnection=Host=postgres;Port=5432;Database=accounts_statements;Username=postgres;Password=postgres
+      - Encryption__Key=YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY=
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+  localstack_data:
